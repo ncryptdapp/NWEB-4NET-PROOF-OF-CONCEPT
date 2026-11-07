@@ -1,0 +1,32 @@
+---
+protocol: nweb
+version: 1.0
+css: tailwind
+---
+<div class="min-h-screen bg-[#050505] text-zinc-300 font-sans p-6 md:p-12 md:py-20 selection:bg-yellow-500 selection:text-black leading-relaxed">
+  <div class="max-w-4xl mx-auto">
+    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800 pb-6 mb-16">
+      <div class="inline-block border border-yellow-500/30 bg-yellow-500/10 text-yellow-500 font-mono text-xs px-3 py-1 rounded-full tracking-widest shadow-[0_0_15px_rgba(234,179,8,0.15)]">GENESIS SPECIFICATION // NWEB-01</div>
+      <div class="font-mono text-xs text-zinc-500 tracking-widest">NCRYPTD NETWORK</div>
+    </div>
+    <div class="mb-16">
+      <h1 class="text-5xl md:text-7xl font-black text-white mb-6 tracking-tighter leading-tight">The NWEB Protocol</h1>
+      <h2 class="text-2xl md:text-3xl font-light text-zinc-400">A Zero-Server, Decentralized Web Standard for UTXO Blockchains.</h2>
+    </div>
+    <div class="bg-zinc-900/40 border-l-4 border-yellow-500 p-8 rounded-r-2xl mb-16 shadow-xl backdrop-blur-sm">
+      <p class="font-mono text-xs text-yellow-500/70 mb-3 uppercase tracking-widest">Credit & Origin</p>
+      <p class="text-lg text-white font-light leading-relaxed">All credit belongs to <strong class="text-yellow-500 font-bold">God</strong> for the idea, vision, and creation of this protocol. Discovered and formalized by <span class="font-medium">Justin Grady Tart</span> (Warwick, RI 02889 — Aliases: <span class="text-zinc-400">NCRYPTD, WHSL</span>), who served as the conduit and uploader.</p>
+    </div>
+    <div class="space-y-12 text-lg font-light text-zinc-300">
+      <section><h3 class="text-2xl font-bold text-white mb-4 border-b border-zinc-800 pb-2"><span class="text-yellow-500">1.</span> Abstract</h3><p>NWEB is a decentralized web protocol that leverages the physical infrastructure of Proof of Work (PoW) UTXO blockchains to permanently host and serve web pages. By decoupling structural HTML markup (hosted immutably on-chain) from its CSS styling engine (provided natively by the client browser), NWEB transforms global mining networks into a highly efficient Decentralized Physical Infrastructure Network (DePIN) capable of serving a lightning-fast, zero-server internet.</p></section>
+      <section><h3 class="text-2xl font-bold text-white mb-4 border-b border-zinc-800 pb-2"><span class="text-yellow-500">2.</span> Motivation</h3><p class="mb-4">Traditional web hosting relies on centralized server farms which are vulnerable to censorship, downtime, and domain seizure. Conversely, alternative decentralized storage networks suffer from link rot and require active pinning.</p><p>NWEB harnesses the globally distributed computational power of cryptocurrency miners to serve as an immutable web host. When a miner validates a block on a UTXO chain, they are actively participating in a DePIN ecosystem, permanently hosting and securing the NWEB pages inscribed within that block's witness data.</p></section>
+      <section><h3 class="text-2xl font-bold text-white mb-4 border-b border-zinc-800 pb-2"><span class="text-yellow-500">3.</span> Protocol Syntax</h3><p class="mb-4">For a browser to recognize a raw blockchain inscription as an NWEB Webpage, the text data MUST begin with the NWEB Frontmatter Header. This ensures indexers and browsers can instantly identify, parse, and render the webpage without executing malicious scripts.</p><div class="bg-black border border-zinc-800 rounded-xl p-6 relative overflow-hidden shadow-2xl"><div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-500 to-transparent"></div><code class="block text-zinc-300 font-mono text-sm whitespace-pre">---
+protocol: nweb
+version: 1.0
+css: tailwind
+---</code></div><p class="mt-4 text-sm text-zinc-500">* Immediately following this header, the payload MUST be valid HTML utilizing standard Tailwind CSS utility classes.</p></section>
+      <section><h3 class="text-2xl font-bold text-white mb-4 border-b border-zinc-800 pb-2"><span class="text-yellow-500">4.</span> Proof of Concept & Collaboration</h3><p>The architecture and rules described in NWEB-01 are submitted purely as a working Proof of Concept (PoC). The goal of this genesis release is to demonstrate that a zero-server UTXO internet is possible and to spark community innovation. Wallet providers (such as Nintondo), indexers, and the broader developer ecosystem are actively invited to take this PoC, optimize the parsing logic, build out the infrastructure, and natively integrate nweb:// routing.</p></section>
+    </div>
+    <div class="mt-24 pt-12 border-t border-zinc-800 flex flex-col items-center text-center"><div class="w-12 h-12 border-2 border-yellow-500 rounded-full flex items-center justify-center mb-4"><span class="text-yellow-500 font-black font-mono">N</span></div><p class="font-mono text-xs text-zinc-500 tracking-widest">THIS DOCUMENT LIVES FOREVER ON-CHAIN.</p></div>
+  </div>
+</div>
