@@ -1,7 +1,7 @@
 # NCRYPTD Network: The NWEB Protocol
 **A Zero-Server, Decentralized Web Standard for UTXO Blockchains.**
 
-> ⚠️ **GENESIS ANCHOR:** The NWEB-01 Protocol was officially inscribed and permanently timestamped on the Bellscoin blockchain at Inscription ID: **[PASTE YOUR INSCRIPTION ID HERE]**
+> ⚠️ **GENESIS ANCHOR:** The NWEB-01 Protocol was officially inscribed and permanently timestamped on the Bellscoin blockchain at Inscription ID: **7d1a54eecf3d737ee9348fd3103efce90c27a3a991fe9adfded2db9bbff4aa56i0**
 
 **Discoverer & Uploader:** Justin Grady Tart (Aliases: NCRYPTD, WHSL)  
 **Credit:** All credit belongs to God for the idea, vision, and creation of this protocol. Justin Tart served as the conduit and uploader.  
