@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NWEB Browser v0.0.3 | NCRYPTD Network</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #09090b; color: #f4f4f5; font-family: ui-sans-serif, system-ui, sans-serif; }
+    #browser-viewport { box-shadow: 0 0 20px rgba(234, 179, 8, 0.05); }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col p-4 md:p-8">
+
+  <header class="max-w-5xl mx-auto w-full mb-8 border-b border-zinc-800 pb-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded bg-yellow-500 flex items-center justify-center text-black font-black text-xl">N</div>
+      <h1 class="text-2xl font-black tracking-wider text-zinc-100">NWEB<span class="text-yellow-500 font-bold text-sm ml-2">BROWSER v0.0.3</span></h1>
+    </div>
+    <div class="text-xs text-zinc-500 font-mono tracking-widest">NCRYPTD NETWORK</div>
+  </header>
+
+  <main class="max-w-5xl mx-auto w-full grid grid-cols-1 lg:grid-cols-3 gap-8">
+    
+    <div class="lg:col-span-1 flex flex-col gap-6">
+      <div class="bg-zinc-900 border border-zinc-700 rounded-xl p-5 shadow-lg">
+        <label class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Inscription ID or URL</label>
+        <div class="flex flex-col gap-3">
+          <input 
+            type="text" 
+            id="searchInput" 
+            placeholder="Paste Bellscoin Inscription ID or URL..." 
+            class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500 font-mono text-sm shadow-inner"
+          >
+          <button 
+            onclick="loadWebsite()" 
+            class="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-3 px-4 rounded-lg transition-colors cursor-pointer"
+          >
+            Load NWEB Page
+          </button>
+        </div>
+      </div>
+      
+      <div id="statusLog" class="hidden rounded-lg p-4 font-mono text-xs border border-zinc-800 bg-black text-zinc-400 whitespace-pre-wrap leading-relaxed shadow-inner"></div>
+    </div>
+
+    <div class="lg:col-span-2 flex flex-col h-[650px] shadow-2xl">
+      <div class="bg-zinc-800 rounded-t-xl px-4 py-2 border-x border-t border-zinc-700 flex items-center gap-2">
+        <span class="text-yellow-500">🔒</span> <span id="addressBar" class="text-xs font-mono text-zinc-400">nweb://waiting...</span>
+      </div>
+      <iframe id="browser-viewport" class="w-full h-full bg-black border-x border-b border-zinc-700 rounded-b-xl" sandbox="allow-scripts"></iframe>
+    </div>
+
+  </main>
+
+  <script>
+    // --- LOCAL TEST MODE: THE GENESIS PAPER ---
+    const MOCK_GENESIS_PAPER = `---
+protocol: nweb
+version: 1.0
+css: tailwind
+---
+<div class="min-h-screen bg-[#050505] text-zinc-300 font-sans p-6 md:p-12 md:py-20 selection:bg-yellow-500 selection:text-black leading-relaxed">
+  <div class="max-w-4xl mx-auto">
+    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800 pb-6 mb-16">
+      <div class="inline-block border border-yellow-500/30 bg-yellow-500/10 text-yellow-500 font-mono text-xs px-3 py-1 rounded-full tracking-widest shadow-[0_0_15px_rgba(234,179,8,0.15)]">GENESIS SPECIFICATION // NWEB-01</div>
+      <div class="font-mono text-xs text-zinc-500 tracking-widest">NCRYPTD NETWORK</div>
+    </div>
+    <div class="mb-16">
+      <h1 class="text-5xl md:text-7xl font-black text-white mb-6 tracking-tighter leading-tight">The NWEB Protocol</h1>
+      <h2 class="text-2xl md:text-3xl font-light text-zinc-400">A Zero-Server, Decentralized Web Standard for UTXO Blockchains.</h2>
+    </div>
+    <div class="bg-zinc-900/40 border-l-4 border-yellow-500 p-8 rounded-r-2xl mb-16 shadow-xl backdrop-blur-sm">
+      <p class="font-mono text-xs text-yellow-500/70 mb-3 uppercase tracking-widest">Credit & Origin</p>
+      <p class="text-lg text-white font-light leading-relaxed">All credit belongs to <strong class="text-yellow-500 font-bold">God</strong> for the idea, vision, and creation of this protocol. Discovered and formalized by <span class="font-medium">Justin Grady Tart</span> (Warwick, RI 02889 — Aliases: <span class="text-zinc-400">NCRYPTD, WHSL</span>), who served as the conduit and uploader.</p>
+    </div>
+    <div class="space-y-12 text-lg font-light text-zinc-300">
+      <section><h3 class="text-2xl font-bold text-white mb-4 border-b border-zinc-800 pb-2"><span class="text-yellow-500">1.</span> Abstract</h3><p>NWEB is a decentralized web protocol that leverages the physical infrastructure of Proof of Work (PoW) UTXO blockchains to permanently host and serve web pages. By decoupling structural HTML markup (hosted immutably on-chain) from its CSS styling engine (provided natively by the client browser), NWEB transforms global mining networks into a highly efficient Decentralized Physical Infrastructure Network (DePIN) capable of serving a lightning-fast, zero-server internet.</p></section>
+      <section><h3 class="text-2xl font-bold text-white mb-4 border-b border-zinc-800 pb-2"><span class="text-yellow-500">2.</span> Motivation</h3><p class="mb-4">Traditional web hosting relies on centralized server farms which are vulnerable to censorship, downtime, and domain seizure. Conversely, alternative decentralized storage networks suffer from link rot and require active pinning.</p><p>NWEB harnesses the globally distributed computational power of cryptocurrency miners to serve as an immutable web host. When a miner validates a block on a UTXO chain, they are actively participating in a DePIN ecosystem, permanently hosting and securing the NWEB pages inscribed within that block's witness data.</p></section>
+      <section><h3 class="text-2xl font-bold text-white mb-4 border-b border-zinc-800 pb-2"><span class="text-yellow-500">3.</span> Protocol Syntax</h3><p class="mb-4">For a browser to recognize a raw blockchain inscription as an NWEB Webpage, the text data MUST begin with the NWEB Frontmatter Header. This ensures indexers and browsers can instantly identify, parse, and render the webpage without executing malicious scripts.</p><div class="bg-black border border-zinc-800 rounded-xl p-6 relative overflow-hidden shadow-2xl"><div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-500 to-transparent"></div><code class="block text-zinc-300 font-mono text-sm whitespace-pre">---
+protocol: nweb
+version: 1.0
+css: tailwind
+---</code></div><p class="mt-4 text-sm text-zinc-500">* Immediately following this header, the payload MUST be valid HTML utilizing standard Tailwind CSS utility classes.</p></section>
+      <section><h3 class="text-2xl font-bold text-white mb-4 border-b border-zinc-800 pb-2"><span class="text-yellow-500">4.</span> Proof of Concept & Collaboration</h3><p>The architecture and rules described in NWEB-01 are submitted purely as a working Proof of Concept (PoC). The goal of this genesis release is to demonstrate that a zero-server UTXO internet is possible and to spark community innovation. Wallet providers (such as Nintondo), indexers, and the broader developer ecosystem are actively invited to take this PoC, optimize the parsing logic, build out the infrastructure, and natively integrate nweb:// routing.</p></section>
+    </div>
+    <div class="mt-24 pt-12 border-t border-zinc-800 flex flex-col items-center text-center"><div class="w-12 h-12 border-2 border-yellow-500 rounded-full flex items-center justify-center mb-4"><span class="text-yellow-500 font-black font-mono">N</span></div><p class="font-mono text-xs text-zinc-500 tracking-widest">THIS DOCUMENT LIVES FOREVER ON-CHAIN.</p></div>
+  </div>
+</div>`;
+
+    // Cleans any full URL down to just the inscription ID
+    function parseInscriptionId(input) {
+      let cleaned = input.trim();
+      if (cleaned.startsWith('nweb://')) {
+        cleaned = cleaned.replace('nweb://', '');
+      }
+      if (cleaned.includes('/')) {
+        cleaned = cleaned.split('/').filter(Boolean).pop();
+      }
+      return cleaned.trim();
+    }
+
+    // Connects to Bellscoin mainnet content server
+    async function fetchRawInscription(id) {
+      const directUrl = `https://bells-mainnet-content.nintondo.io/content/${id}`;
+      
+      const fetchTargets = [
+        directUrl, // 1. Direct fetch
+        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(directUrl)}`, // 2. CORS Proxy 1
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(directUrl)}` // 3. CORS Proxy 2
+      ];
+
+      for (const url of fetchTargets) {
+        try {
+          const res = await fetch(url);
+          if (res.ok) {
+            const body = await res.text();
+            // Verify it's NWEB or raw text, not an error HTML page
+            if (body.includes('protocol: nweb') || body.trim().startsWith('---')) {
+              return body;
+            }
+          }
+        } catch (e) {
+          // try next target
+        }
+      }
+      throw new Error("Could not reach Bellscoin content server.");
+    }
+
+    async function loadWebsite() {
+      const rawInput = document.getElementById('searchInput').value.trim();
+      const statusLog = document.getElementById('statusLog');
+      const addressBar = document.getElementById('addressBar');
+      const iframe = document.getElementById('browser-viewport');
+      
+      if (!rawInput) return;
+
+      const targetId = parseInscriptionId(rawInput);
+
+      statusLog.classList.remove('hidden');
+      statusLog.innerHTML = `> Querying Bellscoin mainnet...\n`;
+      addressBar.innerText = `nweb://${targetId}`;
+      iframe.srcdoc = ""; 
+
+      try {
+        let rawInscription = "";
+
+        if (targetId.toUpperCase() === 'TEST') {
+          statusLog.innerHTML += `> LOCAL TEST: Loading Genesis Paper from local memory...\n`;
+          rawInscription = MOCK_GENESIS_PAPER;
+        } else {
+          statusLog.innerHTML += `> Inscription ID: ${targetId}\n> Downloading raw content from bells-mainnet-content.nintondo.io...\n`;
+          rawInscription = await fetchRawInscription(targetId);
+        }
+
+        // 1. Remove invisible UTF-8 BOM byte (\uFEFF) and whitespace
+        rawInscription = rawInscription.replace(/^\uFEFF/, '').trimStart();
+
+        // 2. Validate Frontmatter
+        if (!rawInscription.startsWith('---')) {
+          statusLog.innerHTML += `> ERROR: Inscription payload does not begin with '---'.\n`;
+          iframe.srcdoc = `<body style="background:#09090b;color:#ef4444;padding:2rem;font-family:sans-serif;">Error: Not a valid NWEB protocol page. Missing frontmatter header.</body>`;
+          return;
+        }
+
+        const parts = rawInscription.split('---');
+        const header = parts[1].toLowerCase();
+        const htmlContent = parts.slice(2).join('---').trim();
+
+        if (!header.includes('protocol: nweb')) {
+          statusLog.innerHTML += `> ERROR: Missing 'protocol: nweb' header.\n`;
+          iframe.srcdoc = `<body style="background:#09090b;color:#ef4444;padding:2rem;font-family:sans-serif;">Error: Incorrect protocol. Expected protocol: nweb.</body>`;
+          return;
+        }
+
+        statusLog.innerHTML += `> NWEB-01 frontmatter confirmed.\n> Injecting client CSS runtime...\n`;
+
+        // 3. Inject Tailwind runtime and render page
+        const finalBrowserPage = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <script src="https://cdn.tailwindcss.com"><\/script>
+              <style>body { background-color: #000; color: #fff; margin: 0; font-family: system-ui, sans-serif; }</style>
+            </head>
+            <body>${htmlContent}</body>
+          </html>
+        `;
+
+        iframe.srcdoc = finalBrowserPage;
+        statusLog.innerHTML += `> Page rendered successfully from Bellscoin blockchain!\n`;
+
+      } catch (error) {
+        statusLog.innerHTML += `> LOAD ERROR: ${error.message}\n`;
+        iframe.srcdoc = `<body style="background:#09090b;color:#ef4444;padding:2rem;font-family:sans-serif;">404 - Could not load NWEB inscription from blockchain. Verify connection.</body>`;
+      }
+    }
+
+    // Enter key support
+    document.getElementById('searchInput').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+        loadWebsite();
+      }
+    });
+  </script>
+</body>
+</html>
