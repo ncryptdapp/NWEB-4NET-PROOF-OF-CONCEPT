@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NWEB OS Browser v0.0.9 | NCRYPTD Network</title>
+  <title>NWEB OS Browser v0.0.10 | NCRYPTD Network</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { background-color: #09090b; color: #f4f4f5; font-family: ui-sans-serif, system-ui, sans-serif; }
@@ -20,12 +20,12 @@
   <header class="max-w-6xl mx-auto w-full mb-6 border-b border-zinc-800 pb-4 flex flex-wrap items-center justify-between gap-3">
     <div class="flex items-center gap-3">
       <div class="w-8 h-8 rounded bg-yellow-500 flex items-center justify-center text-black font-black text-xl shadow-[0_0_15px_rgba(234,179,8,0.3)]">N</div>
-      <h1 class="text-2xl font-black tracking-wider text-zinc-100 font-mono">NWEB<span class="text-yellow-500 font-bold text-sm ml-2">OS v0.0.9</span></h1>
+      <h1 class="text-2xl font-black tracking-wider text-zinc-100 font-mono">NWEB<span class="text-yellow-500 font-bold text-sm ml-2">OS v0.0.10</span></h1>
     </div>
     
     <div class="flex items-center gap-3">
-      <button id="connectWalletBtn" onclick="connectBrowserWallet()" class="border border-zinc-700 bg-zinc-900 hover:border-yellow-500 text-xs px-3 py-1.5 rounded font-mono text-zinc-300 transition-colors">
-        Connect Nintondo
+      <button id="connectWalletBtn" onclick="connectBrowserWallet()" class="border border-green-700 bg-green-950/40 hover:bg-green-900 text-green-300 text-xs px-3 py-1.5 rounded font-mono font-bold transition-colors">
+        [ 🛡️ CONNECT NINTONDO ]
       </button>
       <div class="text-xs text-zinc-500 font-mono tracking-widest hidden sm:inline">NCRYPTD NETWORK</div>
     </div>
@@ -120,7 +120,8 @@
           STANDBY
         </div>
       </div>
-      <iframe id="browser-viewport" class="w-full h-full bg-black border-x border-b border-zinc-700 rounded-b-xl" sandbox="allow-scripts allow-same-origin"></iframe>
+      <!-- Added microphone and camera permissions for future P2P video/voice -->
+      <iframe id="browser-viewport" class="w-full h-full bg-black border-x border-b border-zinc-700 rounded-b-xl" sandbox="allow-scripts allow-same-origin" allow="microphone; camera; display-capture"></iframe>
     </div>
 
   </main>
@@ -130,8 +131,82 @@
     let currentLoadedId = null;
     let currentLoadedTitle = "Blank Page";
 
+    // --- OFFICIAL NINTONDO WALLET BRIDGE ---
+    async function connectBrowserWallet() {
+      const provider = window.nintondo?.provider || window.nintondo;
+      const btn = document.getElementById('connectWalletBtn');
+      const statusLog = document.getElementById('statusLog');
+
+      if (!provider) {
+        statusLog.classList.remove('hidden');
+        statusLog.innerHTML += `> Nintondo Wallet extension not detected on this page.\n> Tip: Ensure Nintondo is installed and the page is running on https://\n`;
+        alert("Nintondo Wallet extension not detected. Ensure Nintondo is installed and this page is running over HTTPS.");
+        return;
+      }
+
+      try {
+        statusLog.classList.remove('hidden');
+        statusLog.innerHTML += `> Requesting Nintondo Provider connection (bellsMainnet)...\n`;
+        
+        // Official Nintondo SDK connect method
+        const address = await provider.connect("bellsMainnet");
+        
+        if (address) {
+          connectedAddress = address;
+          const short = address.slice(0, 6) + "..." + address.slice(-4);
+          
+          btn.innerText = `[ 🛡️ ${short} ]`;
+          btn.className = "border border-green-500 bg-green-900 text-white text-xs px-3 py-1.5 rounded font-mono font-bold shadow-[0_0_10px_rgba(34,197,94,0.3)]";
+          
+          statusLog.innerHTML += `> NINTONDO WALLET CONNECTED: ${address}\n`;
+
+          // Broadcast address to any app loaded in the iframe
+          broadcastWalletToIframe();
+
+          // Listen for account change / disconnect events
+          if (provider.on) {
+            provider.on('accountsChanged', (accounts) => {
+              if (accounts && accounts.length > 0) {
+                connectedAddress = accounts[0];
+                btn.innerText = `[ 🛡️ ${connectedAddress.slice(0,6)}...${connectedAddress.slice(-4)} ]`;
+                broadcastWalletToIframe();
+              }
+            });
+            provider.on('disconnected', () => {
+              connectedAddress = null;
+              btn.innerText = "[ 🛡️ CONNECT NINTONDO ]";
+              btn.className = "border border-green-700 bg-green-950/40 text-green-300 text-xs px-3 py-1.5 rounded font-mono font-bold";
+            });
+          }
+        }
+      } catch (err) {
+        statusLog.classList.remove('hidden');
+        statusLog.innerHTML += `> Wallet connection rejected: ${err.message}\n`;
+      }
+    }
+
+    function broadcastWalletToIframe() {
+      const iframe = document.getElementById('browser-viewport');
+      if (iframe && iframe.contentWindow && connectedAddress) {
+        iframe.contentWindow.postMessage({
+          type: "COMM_WALLET_RESPONSE",
+          address: connectedAddress
+        }, "*");
+      }
+    }
+
+    // Listen for requests from apps inside iframe
+    window.addEventListener("message", async (event) => {
+      if (event.data && event.data.type === "COMM_REQUEST_WALLET") {
+        if (!connectedAddress) {
+          await connectBrowserWallet();
+        } else {
+          broadcastWalletToIframe();
+        }
+      }
+    });
+
     // --- HIERARCHICAL FOLDER / LIBRARY DATA STRUCTURE ---
-    // In-memory tree (clean slate, zero hardcoded presets)
     let libraryTree = {
       id: "root",
       name: "Root",
@@ -141,7 +216,6 @@
 
     let currentFolderId = "root";
 
-    // Helper: Find folder by ID recursively
     function findFolder(folder, targetId) {
       if (folder.id === targetId) return folder;
       for (const sub of folder.folders) {
@@ -151,7 +225,6 @@
       return null;
     }
 
-    // Helper: Find parent folder path for breadcrumbs
     function getFolderPath(folder, targetId, path = []) {
       if (folder.id === targetId) return [...path, folder];
       for (const sub of folder.folders) {
@@ -165,18 +238,15 @@
       const currentFolder = findFolder(libraryTree, currentFolderId) || libraryTree;
       const path = getFolderPath(libraryTree, currentFolderId) || [libraryTree];
       
-      // Render Breadcrumbs
       const breadcrumbsDiv = document.getElementById('breadcrumbs');
       breadcrumbsDiv.innerHTML = path.map((f, idx) => {
         const isLast = idx === path.length - 1;
         return `<span class="${isLast ? 'text-white font-bold' : 'text-yellow-500 cursor-pointer hover:underline'}" onclick="navigateToFolder('${f.id}')">${escapeHtml(f.name)}</span>`;
       }).join(' / ');
 
-      // Render Tree Contents
       const container = document.getElementById('fileTreeContainer');
       container.innerHTML = "";
 
-      // Back button if not in root
       if (currentFolder.id !== "root") {
         const parent = path[path.length - 2];
         const backRow = document.createElement('div');
@@ -194,7 +264,6 @@
         return;
       }
 
-      // Render Subfolders
       currentFolder.folders.forEach(sub => {
         const row = document.createElement('div');
         row.className = "flex items-center justify-between p-1.5 rounded hover:bg-zinc-800/60 border border-transparent hover:border-zinc-700 group";
@@ -211,7 +280,6 @@
         container.appendChild(row);
       });
 
-      // Render Items (Inscriptions)
       currentFolder.items.forEach(item => {
         const row = document.createElement('div');
         row.className = "flex items-center justify-between p-1.5 rounded hover:bg-zinc-800/60 border border-zinc-800/40 hover:border-zinc-700 group";
@@ -260,7 +328,6 @@
       if (!customName || !customName.trim()) return;
 
       const current = findFolder(libraryTree, currentFolderId) || libraryTree;
-      // Overwrite if exists, otherwise push
       const existing = current.items.find(i => i.id === currentLoadedId);
       if (existing) {
         existing.name = customName.trim();
@@ -325,27 +392,19 @@
 
     // --- AUTO-TITLE EXTRACTOR ---
     function extractNwebTitle(htmlContent, fallbackId) {
-      // 1. Standard HTML <title> tag
       const titleMatch = htmlContent.match(/<title[^>]*>(.*?)<\/title>/i);
-      if (titleMatch && titleMatch[1].trim()) {
-        return titleMatch[1].trim();
-      }
-      // 2. <meta name="title" content="...">
+      if (titleMatch && titleMatch[1].trim()) return titleMatch[1].trim();
+
       const metaMatch = htmlContent.match(/<meta\s+name=["']title["']\s+content=["'](.*?)["']/i);
-      if (metaMatch && metaMatch[1].trim()) {
-        return metaMatch[1].trim();
-      }
-      // 3. First <h1> tag
+      if (metaMatch && metaMatch[1].trim()) return metaMatch[1].trim();
+
       const h1Match = htmlContent.match(/<h1[^>]*>(.*?)<\/h1>/i);
-      if (h1Match && h1Match[1].trim()) {
-        // Strip nested tags from inside H1
-        return h1Match[1].replace(/<[^>]*>/g, '').trim();
-      }
-      // 4. Fallback to Inscription ID
+      if (h1Match && h1Match[1].trim()) return h1Match[1].replace(/<[^>]*>/g, '').trim();
+
       return fallbackId || "Untitled Inscription";
     }
 
-    // --- HELPER: FETCH ON-CHAIN RAW CONTENT ---
+    // --- FETCH RAW CONTENT ---
     function parseInscriptionId(input) {
       let cleaned = input.trim();
       if (cleaned.startsWith('nweb://')) cleaned = cleaned.replace('nweb://', '');
@@ -421,15 +480,13 @@
         return;
       }
 
-      // Auto-extract official title
       const extractedTitle = extractNwebTitle(htmlContent, originalId);
       currentLoadedId = originalId;
       currentLoadedTitle = extractedTitle;
       pageTitleDisplay.innerText = extractedTitle;
 
-      statusLog.innerHTML += `> Protocol: NWEB verified.\n> Auto-discovered Title: "${extractedTitle}"\n`;
+      statusLog.innerHTML += `> Protocol: NWEB verified.\n> Title: "${extractedTitle}"\n`;
 
-      // Detect NMUSIC
       const isMusic = htmlContent.includes('name="app" content="nmusic"') || 
                       htmlContent.includes("name='app' content='nmusic'");
 
@@ -454,10 +511,13 @@
         `;
       }
 
+      iframe.onload = () => {
+        setTimeout(broadcastWalletToIframe, 300);
+      };
+
       statusLog.innerHTML += `> Ready.\n`;
     }
 
-    // --- DEV MODE LOCAL FILE PICKER ---
     function loadLocalFile(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -473,7 +533,6 @@
       reader.readAsText(file);
     }
 
-    // --- LOAD FROM SEARCH BAR ---
     async function loadWebsite() {
       const rawInput = document.getElementById('searchInput').value.trim();
       const statusLog = document.getElementById('statusLog');
@@ -495,7 +554,6 @@
       }
     }
 
-    // --- NMUSIC DECK ---
     function renderNmusicDeck(rawHtml) {
       const getMeta = (name) => {
         const regex = new RegExp(`<meta\\s+name=["']${name}["']\\s+content=["'](.*?)["']`, "i");
