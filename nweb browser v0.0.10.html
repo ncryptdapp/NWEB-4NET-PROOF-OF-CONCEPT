@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NWEB OS Browser v0.0.10 | NCRYPTD Network</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #09090b; color: #f4f4f5; font-family: ui-sans-serif, system-ui, sans-serif; }
+    #browser-viewport { box-shadow: 0 0 25px rgba(234, 179, 8, 0.05); }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: #000; }
+    ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: #eab308; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col p-4 md:p-6">
+
+  <!-- TOP HEADER -->
+  <header class="max-w-6xl mx-auto w-full mb-6 border-b border-zinc-800 pb-4 flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded bg-yellow-500 flex items-center justify-center text-black font-black text-xl shadow-[0_0_15px_rgba(234,179,8,0.3)]">N</div>
+      <h1 class="text-2xl font-black tracking-wider text-zinc-100 font-mono">NWEB<span class="text-yellow-500 font-bold text-sm ml-2">OS v0.0.10</span></h1>
+    </div>
+    
+    <div class="flex items-center gap-3">
+      <button id="connectWalletBtn" onclick="connectBrowserWallet()" class="border border-green-700 bg-green-950/40 hover:bg-green-900 text-green-300 text-xs px-3 py-1.5 rounded font-mono font-bold transition-colors">
+        [ 🛡️ CONNECT NINTONDO ]
+      </button>
+      <div class="text-xs text-zinc-500 font-mono tracking-widest hidden sm:inline">NCRYPTD NETWORK</div>
+    </div>
+  </header>
+
+  <!-- MAIN INTERFACE -->
+  <main class="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
+    
+    <!-- LEFT PANEL: CONTROLS & NESTED FOLDER ORGANIZER (5 Cols) -->
+    <div class="lg:col-span-5 flex flex-col gap-5">
+      
+      <!-- 1. SEARCH & ADDRESS BAR -->
+      <div class="bg-zinc-900 border border-zinc-700 rounded-xl p-4 shadow-lg">
+        <label class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2 font-mono">Address Bar / Search Inscription</label>
+        <div class="flex flex-col gap-2">
+          <input 
+            type="text" 
+            id="searchInput" 
+            placeholder="Paste Bellscoin Inscription ID..." 
+            class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2.5 text-white focus:outline-none focus:border-yellow-500 font-mono text-xs shadow-inner"
+            onkeydown="if(event.key === 'Enter') loadWebsite()"
+          >
+          <div class="flex gap-2">
+            <button 
+              onclick="loadWebsite()" 
+              class="flex-1 bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-2 px-3 rounded-lg text-xs transition-colors cursor-pointer font-mono"
+            >
+              [ 🌐 LOAD INSCRIPTION ]
+            </button>
+            <button 
+              onclick="bookmarkCurrentPage()" 
+              title="Save to Current Folder"
+              class="bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-yellow-500 font-bold px-3 py-2 rounded-lg text-xs transition-colors font-mono"
+            >
+              ★ SAVE
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. HIERARCHICAL FOLDER & BOOKMARK ORGANIZER (IN-MEMORY VAULT) -->
+      <div class="bg-zinc-900/70 border border-zinc-700 rounded-xl p-4 shadow-lg flex-1 flex flex-col min-h-[320px]">
+        
+        <!-- TOOLBAR & BREADCRUMB -->
+        <div class="flex items-center justify-between pb-2 mb-2 border-b border-zinc-800 text-xs font-mono">
+          <div class="flex items-center gap-1.5 overflow-x-auto text-zinc-400" id="breadcrumbs">
+            <span class="text-yellow-500 font-bold cursor-pointer" onclick="navigateToFolder('root')">Root</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <button onclick="createNewFolderPrompt()" class="bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-[10px] px-2 py-0.5 rounded text-zinc-300">
+              + FOLDER
+            </button>
+          </div>
+        </div>
+
+        <!-- FOLDER / ITEM TREE VIEW -->
+        <div id="fileTreeContainer" class="flex-1 overflow-y-auto space-y-1 pr-1 font-mono text-xs">
+          <!-- Dynamic rendering -->
+        </div>
+
+        <div class="pt-2 mt-2 border-t border-zinc-800 text-[10px] text-zinc-500 font-mono flex justify-between">
+          <span>STORAGE: RAM ONLY (CLEAN SLATE)</span>
+          <span onclick="clearLibrary()" class="text-red-400 hover:underline cursor-pointer">WIPE LIBRARY</span>
+        </div>
+      </div>
+
+      <!-- 3. DEV MODE LOCAL FILE PICKER -->
+      <div class="bg-zinc-900/40 border border-dashed border-zinc-700 rounded-xl p-3">
+        <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1 font-mono">📁 Dev Mode: Test Local File</label>
+        <input 
+          type="file" 
+          id="localFileInput" 
+          accept=".html,.txt" 
+          onchange="loadLocalFile(event)" 
+          class="w-full text-xs text-zinc-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-zinc-800 file:text-yellow-500 hover:file:bg-zinc-700 cursor-pointer"
+        >
+      </div>
+
+      <!-- STATUS LOG -->
+      <div id="statusLog" class="hidden rounded-lg p-3 font-mono text-xs border border-zinc-800 bg-black text-zinc-400 whitespace-pre-wrap leading-relaxed shadow-inner max-h-36 overflow-y-auto"></div>
+    </div>
+
+    <!-- RIGHT PANEL: VIEWPORT DECK (7 Cols) -->
+    <div class="lg:col-span-7 flex flex-col h-[680px] shadow-2xl">
+      <div class="bg-zinc-800 rounded-t-xl px-4 py-2.5 border-x border-t border-zinc-700 flex items-center justify-between">
+        <div class="flex items-center gap-2 overflow-hidden mr-2">
+          <span id="lockIcon" class="text-yellow-500 flex-shrink-0">🔒</span> 
+          <span id="pageTitleDisplay" class="text-xs font-bold text-white truncate font-mono">Blank Viewport</span>
+          <span id="addressBar" class="text-[10px] font-mono text-zinc-400 truncate hidden sm:inline">nweb://waiting...</span>
+        </div>
+        <div id="appTypeBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-zinc-400 flex-shrink-0">
+          STANDBY
+        </div>
+      </div>
+      <!-- Added microphone and camera permissions for future P2P video/voice -->
+      <iframe id="browser-viewport" class="w-full h-full bg-black border-x border-b border-zinc-700 rounded-b-xl" sandbox="allow-scripts allow-same-origin" allow="microphone; camera; display-capture"></iframe>
+    </div>
+
+  </main>
+
+  <script>
+    let connectedAddress = null;
+    let currentLoadedId = null;
+    let currentLoadedTitle = "Blank Page";
+
+    // --- OFFICIAL NINTONDO WALLET BRIDGE ---
+    async function connectBrowserWallet() {
+      const provider = window.nintondo?.provider || window.nintondo;
+      const btn = document.getElementById('connectWalletBtn');
+      const statusLog = document.getElementById('statusLog');
+
+      if (!provider) {
+        statusLog.classList.remove('hidden');
+        statusLog.innerHTML += `> Nintondo Wallet extension not detected on this page.\n> Tip: Ensure Nintondo is installed and the page is running on https://\n`;
+        alert("Nintondo Wallet extension not detected. Ensure Nintondo is installed and this page is running over HTTPS.");
+        return;
+      }
+
+      try {
+        statusLog.classList.remove('hidden');
+        statusLog.innerHTML += `> Requesting Nintondo Provider connection (bellsMainnet)...\n`;
+        
+        // Official Nintondo SDK connect method
+        const address = await provider.connect("bellsMainnet");
+        
+        if (address) {
+          connectedAddress = address;
+          const short = address.slice(0, 6) + "..." + address.slice(-4);
+          
+          btn.innerText = `[ 🛡️ ${short} ]`;
+          btn.className = "border border-green-500 bg-green-900 text-white text-xs px-3 py-1.5 rounded font-mono font-bold shadow-[0_0_10px_rgba(34,197,94,0.3)]";
+          
+          statusLog.innerHTML += `> NINTONDO WALLET CONNECTED: ${address}\n`;
+
+          // Broadcast address to any app loaded in the iframe
+          broadcastWalletToIframe();
+
+          // Listen for account change / disconnect events
+          if (provider.on) {
+            provider.on('accountsChanged', (accounts) => {
+              if (accounts && accounts.length > 0) {
+                connectedAddress = accounts[0];
+                btn.innerText = `[ 🛡️ ${connectedAddress.slice(0,6)}...${connectedAddress.slice(-4)} ]`;
+                broadcastWalletToIframe();
+              }
+            });
+            provider.on('disconnected', () => {
+              connectedAddress = null;
+              btn.innerText = "[ 🛡️ CONNECT NINTONDO ]";
+              btn.className = "border border-green-700 bg-green-950/40 text-green-300 text-xs px-3 py-1.5 rounded font-mono font-bold";
+            });
+          }
+        }
+      } catch (err) {
+        statusLog.classList.remove('hidden');
+        statusLog.innerHTML += `> Wallet connection rejected: ${err.message}\n`;
+      }
+    }
+
+    function broadcastWalletToIframe() {
+      const iframe = document.getElementById('browser-viewport');
+      if (iframe && iframe.contentWindow && connectedAddress) {
+        iframe.contentWindow.postMessage({
+          type: "COMM_WALLET_RESPONSE",
+          address: connectedAddress
+        }, "*");
+      }
+    }
+
+    // Listen for requests from apps inside iframe
+    window.addEventListener("message", async (event) => {
+      if (event.data && event.data.type === "COMM_REQUEST_WALLET") {
+        if (!connectedAddress) {
+          await connectBrowserWallet();
+        } else {
+          broadcastWalletToIframe();
+        }
+      }
+    });
+
+    // --- HIERARCHICAL FOLDER / LIBRARY DATA STRUCTURE ---
+    let libraryTree = {
+      id: "root",
+      name: "Root",
+      folders: [],
+      items: []
+    };
+
+    let currentFolderId = "root";
+
+    function findFolder(folder, targetId) {
+      if (folder.id === targetId) return folder;
+      for (const sub of folder.folders) {
+        const found = findFolder(sub, targetId);
+        if (found) return found;
+      }
+      return null;
+    }
+
+    function getFolderPath(folder, targetId, path = []) {
+      if (folder.id === targetId) return [...path, folder];
+      for (const sub of folder.folders) {
+        const res = getFolderPath(sub, targetId, [...path, folder]);
+        if (res) return res;
+      }
+      return null;
+    }
+
+    function renderLibraryUI() {
+      const currentFolder = findFolder(libraryTree, currentFolderId) || libraryTree;
+      const path = getFolderPath(libraryTree, currentFolderId) || [libraryTree];
+      
+      const breadcrumbsDiv = document.getElementById('breadcrumbs');
+      breadcrumbsDiv.innerHTML = path.map((f, idx) => {
+        const isLast = idx === path.length - 1;
+        return `<span class="${isLast ? 'text-white font-bold' : 'text-yellow-500 cursor-pointer hover:underline'}" onclick="navigateToFolder('${f.id}')">${escapeHtml(f.name)}</span>`;
+      }).join(' / ');
+
+      const container = document.getElementById('fileTreeContainer');
+      container.innerHTML = "";
+
+      if (currentFolder.id !== "root") {
+        const parent = path[path.length - 2];
+        const backRow = document.createElement('div');
+        backRow.className = "flex items-center gap-1.5 p-1.5 text-zinc-400 hover:text-white cursor-pointer rounded hover:bg-zinc-800/50";
+        backRow.innerHTML = `<span>📁</span> <span class="italic text-zinc-500">.. (Up one level)</span>`;
+        backRow.onclick = () => navigateToFolder(parent.id);
+        container.appendChild(backRow);
+      }
+
+      if (currentFolder.folders.length === 0 && currentFolder.items.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = "text-zinc-600 italic p-3 text-center";
+        empty.innerText = "Folder is empty. Click [+ Folder] or [★ Save] to organize.";
+        container.appendChild(empty);
+        return;
+      }
+
+      currentFolder.folders.forEach(sub => {
+        const row = document.createElement('div');
+        row.className = "flex items-center justify-between p-1.5 rounded hover:bg-zinc-800/60 border border-transparent hover:border-zinc-700 group";
+        row.innerHTML = `
+          <div class="flex items-center gap-2 cursor-pointer flex-1 truncate" onclick="navigateToFolder('${sub.id}')">
+            <span class="text-yellow-500">📁</span>
+            <span class="text-zinc-200 font-bold truncate group-hover:text-yellow-400">${escapeHtml(sub.name)}/</span>
+          </div>
+          <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button onclick="renameFolder('${sub.id}')" class="text-[10px] text-zinc-400 hover:text-white px-1">✎</button>
+            <button onclick="deleteFolder('${sub.id}')" class="text-[10px] text-red-400 hover:text-red-300 px-1">×</button>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+
+      currentFolder.items.forEach(item => {
+        const row = document.createElement('div');
+        row.className = "flex items-center justify-between p-1.5 rounded hover:bg-zinc-800/60 border border-zinc-800/40 hover:border-zinc-700 group";
+        row.innerHTML = `
+          <div class="flex items-center gap-2 cursor-pointer flex-1 truncate mr-2" onclick="quickLoadItem('${item.id}')">
+            <span>📄</span>
+            <div class="truncate">
+              <div class="text-white font-bold truncate group-hover:text-yellow-400">${escapeHtml(item.name)}</div>
+              <div class="text-[9px] text-zinc-500 font-mono truncate">${item.id}</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 flex-shrink-0">
+            <button onclick="quickLoadItem('${item.id}')" class="text-[10px] bg-zinc-800 border border-zinc-600 px-1.5 py-0.5 rounded text-yellow-500 hover:bg-yellow-500 hover:text-black font-bold">LOAD</button>
+            <button onclick="renameItem('${item.id}')" class="text-[10px] text-zinc-400 hover:text-white px-1 opacity-0 group-hover:opacity-100">✎</button>
+            <button onclick="deleteItem('${item.id}')" class="text-[10px] text-red-400 hover:text-red-300 px-1 opacity-0 group-hover:opacity-100">×</button>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function navigateToFolder(fId) {
+      currentFolderId = fId;
+      renderLibraryUI();
+    }
+
+    function createNewFolderPrompt() {
+      const name = prompt("Enter folder name:");
+      if (!name || !name.trim()) return;
+      const current = findFolder(libraryTree, currentFolderId) || libraryTree;
+      current.folders.push({
+        id: "f_" + Math.random().toString(36).substring(2, 9),
+        name: name.trim(),
+        folders: [],
+        items: []
+      });
+      renderLibraryUI();
+    }
+
+    function bookmarkCurrentPage() {
+      if (!currentLoadedId) {
+        alert("Load a valid inscription first before saving.");
+        return;
+      }
+      const customName = prompt("Enter local name for this inscription:", currentLoadedTitle);
+      if (!customName || !customName.trim()) return;
+
+      const current = findFolder(libraryTree, currentFolderId) || libraryTree;
+      const existing = current.items.find(i => i.id === currentLoadedId);
+      if (existing) {
+        existing.name = customName.trim();
+      } else {
+        current.items.push({
+          id: currentLoadedId,
+          name: customName.trim()
+        });
+      }
+      renderLibraryUI();
+    }
+
+    function quickLoadItem(inscriptionId) {
+      document.getElementById('searchInput').value = inscriptionId;
+      loadWebsite();
+    }
+
+    function renameFolder(folderId) {
+      const f = findFolder(libraryTree, folderId);
+      if (!f) return;
+      const n = prompt("Rename folder:", f.name);
+      if (n && n.trim()) {
+        f.name = n.trim();
+        renderLibraryUI();
+      }
+    }
+
+    function deleteFolder(folderId) {
+      if (!confirm("Delete this folder and all contents inside it?")) return;
+      function removeRecursive(parent) {
+        parent.folders = parent.folders.filter(sub => sub.id !== folderId);
+        parent.folders.forEach(removeRecursive);
+      }
+      removeRecursive(libraryTree);
+      renderLibraryUI();
+    }
+
+    function renameItem(itemId) {
+      const current = findFolder(libraryTree, currentFolderId) || libraryTree;
+      const item = current.items.find(i => i.id === itemId);
+      if (!item) return;
+      const n = prompt("Rename bookmark locally:", item.name);
+      if (n && n.trim()) {
+        item.name = n.trim();
+        renderLibraryUI();
+      }
+    }
+
+    function deleteItem(itemId) {
+      const current = findFolder(libraryTree, currentFolderId) || libraryTree;
+      current.items = current.items.filter(i => i.id !== itemId);
+      renderLibraryUI();
+    }
+
+    function clearLibrary() {
+      if (confirm("Wipe all folders and bookmarks from memory?")) {
+        libraryTree = { id: "root", name: "Root", folders: [], items: [] };
+        currentFolderId = "root";
+        renderLibraryUI();
+      }
+    }
+
+    // --- AUTO-TITLE EXTRACTOR ---
+    function extractNwebTitle(htmlContent, fallbackId) {
+      const titleMatch = htmlContent.match(/<title[^>]*>(.*?)<\/title>/i);
+      if (titleMatch && titleMatch[1].trim()) return titleMatch[1].trim();
+
+      const metaMatch = htmlContent.match(/<meta\s+name=["']title["']\s+content=["'](.*?)["']/i);
+      if (metaMatch && metaMatch[1].trim()) return metaMatch[1].trim();
+
+      const h1Match = htmlContent.match(/<h1[^>]*>(.*?)<\/h1>/i);
+      if (h1Match && h1Match[1].trim()) return h1Match[1].replace(/<[^>]*>/g, '').trim();
+
+      return fallbackId || "Untitled Inscription";
+    }
+
+    // --- FETCH RAW CONTENT ---
+    function parseInscriptionId(input) {
+      let cleaned = input.trim();
+      if (cleaned.startsWith('nweb://')) cleaned = cleaned.replace('nweb://', '');
+      if (cleaned.includes('/')) cleaned = cleaned.split('/').filter(Boolean).pop();
+      return cleaned.trim();
+    }
+
+    async function fetchRawInscription(id) {
+      const directUrl = `https://bells-mainnet-content.nintondo.io/content/${id}`;
+      const fetchTargets = [
+        directUrl,
+        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(directUrl)}`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(directUrl)}`
+      ];
+
+      for (const url of fetchTargets) {
+        try {
+          const res = await fetch(url);
+          if (res.ok) {
+            const body = await res.text();
+            if (body.includes('protocol: nweb') || body.trim().startsWith('---')) return body;
+          }
+        } catch (e) {}
+      }
+      throw new Error("Could not reach Bellscoin content server.");
+    }
+
+    function base64ToBinaryBlobUrl(rawSource) {
+      if (!rawSource.startsWith('data:audio/')) return rawSource;
+      const base64Data = rawSource.replace(/^data:audio\/[^;]+;base64,/, '').replace(/\s/g, '');
+      const byteCharacters = atob(base64Data);
+      const byteArrays = [];
+      const sliceSize = 1024 * 512;
+      for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+        const slice = byteCharacters.slice(offset, offset + sliceSize);
+        const byteNumbers = new Uint8Array(slice.length);
+        for (let i = 0; i < slice.length; i++) byteNumbers[i] = slice.charCodeAt(i);
+        byteArrays.push(byteNumbers);
+      }
+      return URL.createObjectURL(new Blob(byteArrays, { type: 'audio/mpeg' }));
+    }
+
+    function escapeHtml(text) {
+      return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    // --- RENDER ENGINE ---
+    async function renderNwebPayload(rawPayload, sourceUri, originalId) {
+      const statusLog = document.getElementById('statusLog');
+      const addressBar = document.getElementById('addressBar');
+      const pageTitleDisplay = document.getElementById('pageTitleDisplay');
+      const appTypeBadge = document.getElementById('appTypeBadge');
+      const iframe = document.getElementById('browser-viewport');
+
+      addressBar.innerText = sourceUri;
+      statusLog.classList.remove('hidden');
+
+      const cleaned = rawPayload.replace(/^\uFEFF/, '').trimStart();
+
+      if (!cleaned.startsWith('---')) {
+        statusLog.innerHTML += `> PARSE ERROR: Missing leading '---' frontmatter.\n`;
+        iframe.srcdoc = `<body style="background:#09090b;color:#ef4444;padding:2rem;font-family:sans-serif;">Error: Not a valid NWEB page.</body>`;
+        return;
+      }
+
+      const parts = cleaned.split('---');
+      const header = parts[1].toLowerCase();
+      const htmlContent = parts.slice(2).join('---').trim();
+
+      if (!header.includes('protocol: nweb')) {
+        statusLog.innerHTML += `> PROTOCOL ERROR: Header missing 'protocol: nweb'.\n`;
+        iframe.srcdoc = `<body style="background:#09090b;color:#ef4444;padding:2rem;font-family:sans-serif;">Error: Incorrect protocol. Expected protocol: nweb.</body>`;
+        return;
+      }
+
+      const extractedTitle = extractNwebTitle(htmlContent, originalId);
+      currentLoadedId = originalId;
+      currentLoadedTitle = extractedTitle;
+      pageTitleDisplay.innerText = extractedTitle;
+
+      statusLog.innerHTML += `> Protocol: NWEB verified.\n> Title: "${extractedTitle}"\n`;
+
+      const isMusic = htmlContent.includes('name="app" content="nmusic"') || 
+                      htmlContent.includes("name='app' content='nmusic'");
+
+      if (isMusic) {
+        appTypeBadge.innerText = "🎵 NMUSIC DECK";
+        appTypeBadge.className = "text-[10px] font-mono px-2 py-0.5 rounded bg-yellow-500/20 border border-yellow-500 text-yellow-500 font-bold";
+        iframe.srcdoc = renderNmusicDeck(htmlContent);
+      } else {
+        appTypeBadge.innerText = "🌐 WEB";
+        appTypeBadge.className = "text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-zinc-300";
+        iframe.srcdoc = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <script src="https://cdn.tailwindcss.com"><\/script>
+              <style>body { background-color: #000; color: #fff; margin: 0; font-family: system-ui, sans-serif; }</style>
+            </head>
+            <body>${htmlContent}</body>
+          </html>
+        `;
+      }
+
+      iframe.onload = () => {
+        setTimeout(broadcastWalletToIframe, 300);
+      };
+
+      statusLog.innerHTML += `> Ready.\n`;
+    }
+
+    function loadLocalFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const statusLog = document.getElementById('statusLog');
+      statusLog.classList.remove('hidden');
+      statusLog.innerHTML = `> DEV MODE: Reading local file: ${file.name}...\n`;
+
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        await renderNwebPayload(e.target.result, `local://${file.name}`, file.name);
+      };
+      reader.readAsText(file);
+    }
+
+    async function loadWebsite() {
+      const rawInput = document.getElementById('searchInput').value.trim();
+      const statusLog = document.getElementById('statusLog');
+      const iframe = document.getElementById('browser-viewport');
+      
+      if (!rawInput) return;
+
+      const targetId = parseInscriptionId(rawInput);
+      statusLog.classList.remove('hidden');
+      statusLog.innerHTML = `> Querying Bellscoin mainnet for: ${targetId}...\n`;
+      iframe.srcdoc = ""; 
+
+      try {
+        const raw = await fetchRawInscription(targetId);
+        await renderNwebPayload(raw, `nweb://${targetId}`, targetId);
+      } catch (error) {
+        statusLog.innerHTML += `> LOAD ERROR: ${error.message}\n`;
+        iframe.srcdoc = `<body style="background:#09090b;color:#ef4444;padding:2rem;font-family:sans-serif;">404 - Could not load inscription.</body>`;
+      }
+    }
+
+    function renderNmusicDeck(rawHtml) {
+      const getMeta = (name) => {
+        const regex = new RegExp(`<meta\\s+name=["']${name}["']\\s+content=["'](.*?)["']`, "i");
+        const match = rawHtml.match(regex);
+        return match ? match[1] : "Unknown";
+      };
+
+      const title = getMeta("title");
+      const artist = getMeta("artist");
+      const album = getMeta("album");
+      const track = getMeta("track");
+      const releaseDate = getMeta("release-date");
+      const copyright = getMeta("copyright");
+      const genre = getMeta("genre");
+
+      let rawSrc = "";
+      const srcMatch = rawHtml.match(/src=["'](data:audio\/[^"']+|https?:\/\/[^"']+)["']/i);
+      if (srcMatch) rawSrc = srcMatch[1];
+
+      const playableBlobUrl = base64ToBinaryBlobUrl(rawSrc);
+
+      return `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <script src="https://cdn.tailwindcss.com"><\/script>
+          <style>body { background-color: #030303; color: #f4f4f5; font-family: ui-monospace, SFMono-Regular, monospace; }</style>
+        </head>
+        <body class="min-h-screen flex flex-col items-center justify-center p-6 select-none">
+          <div class="border border-green-900/80 p-8 rounded-2xl bg-black max-w-lg w-full shadow-[0_0_30px_rgba(34,197,94,0.1)] text-left font-mono">
+            <div class="flex items-center justify-between text-xs text-green-600 mb-6 border-b border-green-900/60 pb-3">
+              <span class="tracking-widest">NMUSIC // ON-CHAIN AUDIO DECK</span>
+              <span class="text-zinc-500 font-bold">[${genre}]</span>
+            </div>
+            <div class="h-32 w-full rounded-xl bg-zinc-950 border border-green-900/40 mb-6 flex flex-col items-center justify-center">
+              <div class="text-green-500 text-2xl font-bold mb-1">▶ NMUSIC DECK</div>
+              <div class="text-[10px] tracking-widest text-green-500/70">BELLSCOIN ON-CHAIN STREAM</div>
+            </div>
+            <div class="mb-6">
+              <div class="text-xs text-zinc-500 uppercase tracking-wider mb-1">ALBUM: <strong class="text-zinc-300">${album}</strong> (${track})</div>
+              <h1 class="text-2xl font-black text-white tracking-tight">${title}</h1>
+              <h2 class="text-sm font-bold text-green-400 mt-1">${artist}</h2>
+            </div>
+            <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 mb-6">
+              <audio controls class="w-full" preload="auto">
+                <source src="${playableBlobUrl}">
+                Your browser does not support on-chain audio.
+              </audio>
+            </div>
+            <div class="text-[10px] text-zinc-500 border-t border-zinc-900 pt-3 space-y-1">
+              <div>RELEASE DATE: <span class="text-zinc-400">${releaseDate}</span></div>
+              <div>COPYRIGHT: <span class="text-zinc-400">${copyright}</span></div>
+              <div class="text-green-600/80 font-bold">SOURCE: VERIFIED NWEB ON-CHAIN ASSET</div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+    }
+
+    renderLibraryUI();
+  </script>
+</body>
+</html>
